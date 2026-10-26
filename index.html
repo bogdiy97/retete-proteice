@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Rețete proteice și fit</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rețete">
+<meta name="theme-color" content="#f3ebdb">
+<style>
+  /* O singură carte de intrare pe hârtie crem, în culorile cărții. */
+  :root { --paper: #f3ebdb; --card: #fbf6ea; --ink: #2b2118; --muted: #6e6152; --rule: #dccfb6; --accent: #c2532d; --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; --sans: -apple-system, "Segoe UI", system-ui, sans-serif; color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.5 var(--sans); display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  main { width: min(26rem, 100%); background: var(--card); border: 2px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); padding: 1.6rem 1.4rem 1.4rem; display: grid; gap: 1rem; }
+  img { width: 96px; height: 96px; border-radius: 22px; justify-self: center; }
+  h1 { font-family: var(--serif); font-size: 1.9rem; line-height: 1.1; margin: 0; text-align: center; text-wrap: balance; }
+  p { margin: 0; color: var(--muted); text-align: center; }
+  form { display: grid; gap: .8rem; }
+  label.pw { display: grid; gap: .35rem; font-weight: 600; font-size: .95rem; }
+  input[type=password] { font: inherit; font-size: 1.1rem; padding: .75rem .85rem; border: 1.6px solid var(--ink); border-radius: 12px; background: #fff; color: var(--ink); width: 100%; }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .rem { display: flex; gap: .5rem; align-items: center; font-size: .95rem; }
+  .rem input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); }
+  button { font: inherit; font-weight: 700; font-size: 1.05rem; padding: .85rem 1rem; border: 2px solid var(--ink); border-radius: 999px; background: var(--accent); color: #fff; cursor: pointer; }
+  button[disabled] { opacity: .65; cursor: progress; }
+  .err { color: var(--accent); font-weight: 600; min-height: 1.4em; }
+  .fine { font-size: .82rem; }
+</style>
+</head>
+<body>
+<main>
+  <img src="apple-touch-icon.png" alt="" width="96" height="96">
+  <h1>Rețete proteice și fit</h1>
+  <p>Cartea e protejată cu parolă.</p>
+  <form id="f" autocomplete="on">
+    <label class="pw">Parola<input id="pw" type="password" name="password" autocomplete="current-password" required></label>
+    <label class="rem"><input id="rem" type="checkbox" checked> Ține-mă minte pe acest dispozitiv</label>
+    <button id="go" type="submit">Deschide cartea</button>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+  <p class="fine">Pe iPhone: Safari, butonul Share, apoi „Add to Home Screen”. Cartea se deschide ca o aplicație și merge și fără internet.</p>
+</main>
+<script>
+(function () {
+  var SALT = 'Tq14cAmovFNNvnF6WMLhUA==', ITER = 310000;
+  var $ = function (id) { return document.getElementById(id); };
+  var b64 = function (u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
+  var unb64 = function (s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); };
+  function store(k, v, remember) {
+    try { sessionStorage.setItem(k, v); } catch (e) {}
+    try { if (remember) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {}
+  }
+  function forget() { try { sessionStorage.removeItem('carte.k'); localStorage.removeItem('carte.k'); } catch (e) {} }
+  async function derive(pw) {
+    var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: unb64(SALT), iterations: ITER, hash: 'SHA-256' }, base, 256));
+  }
+  async function openBook(raw, remember) {
+    var key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    var r = await fetch('book.enc'); if (!r.ok) throw new Error('net');
+    var buf = await r.arrayBuffer();
+    var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(buf, 0, 12) }, key, new Uint8Array(buf, 12));
+    store('carte.k', b64(raw), remember);
+    var html = new TextDecoder().decode(plain);
+    document.open();
+    document.write('<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex, nofollow"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#f3ebdb">' + html);
+    document.close();
+  }
+  if (!window.crypto || !crypto.subtle) { $('err').textContent = 'Deschide cartea de la adresa ei https, într-un browser actualizat.'; $('go').disabled = true; return; }
+  var saved = null; try { saved = sessionStorage.getItem('carte.k') || localStorage.getItem('carte.k'); } catch (e) {}
+  if (saved) openBook(unb64(saved), !!localStorage.getItem('carte.k')).catch(function (e) { if (e && e.message === 'net') $('err').textContent = 'Nu am putut încărca cartea. Verifică internetul și reîncarcă pagina.'; else forget(); });
+  $('f').addEventListener('submit', async function (ev) {
+    ev.preventDefault(); $('err').textContent = ''; $('go').disabled = true; $('go').textContent = 'Se deschide…';
+    try { await openBook(await derive($('pw').value), $('rem').checked); }
+    catch (e) {
+      $('go').disabled = false; $('go').textContent = 'Deschide cartea';
+      $('err').textContent = e && e.message === 'net' ? 'Nu am putut încărca cartea. Verifică internetul și încearcă din nou.' : 'Parola nu e bună. Încearcă din nou.';
+      $('pw').select();
+    }
+  });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
