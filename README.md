@@ -4,4 +4,4 @@ Carte de rețete cu 219 rețete proteice, planificator pe săptămână, cost pe
 
 Site: https://bogdiy97.github.io/retete-proteice/
 
-Conținutul e criptat (AES-GCM, cheie derivată din parolă cu PBKDF2). Fără parolă, fișierele din acest repository nu pot fi citite.
+Fișierele sunt criptate (AES-GCM, cheie derivată cu PBKDF2). Momentan cartea se deschide fără parolă; se poate pune o parolă oricând.
