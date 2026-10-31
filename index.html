@@ -48,7 +48,7 @@
 </main>
 <script>
 (function () {
-  var SALT = 'XDbzThfc03kAs43b08cZtA==', ITER = 310000, OPEN = true; // OPEN: cartea nu are parolă, se deschide direct
+  var SALT = 'WE+Z9fM2oW0dzubk5T/xkQ==', ITER = 310000, OPEN = true; // OPEN: cartea nu are parolă, se deschide direct
   var $ = function (id) { return document.getElementById(id); };
   var b64 = function (u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
   var unb64 = function (s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); };
